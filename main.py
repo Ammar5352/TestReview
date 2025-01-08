@@ -48,7 +48,7 @@ def review_chatbot(criteria):
         url = st.text_input("Provide URL of TripAdvisor")
         if url:
             response = requests.get(url = url,headers=headers).content
-            soup = BeautifulSoup(response,'html.parser')
+            soup = BeautifulSoup(response,'lxml')
             print("/*/*/*/*/",soup)
             reviews = soup.find_all('span',{'class':'orRIx Ci _a C'})
             month_date = soup.find_all('span',{'class':'iSNGb _R Me S4 H3 Cj'})
