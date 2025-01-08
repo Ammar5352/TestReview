@@ -59,16 +59,19 @@ def review_chatbot(criteria):
             print(new_list)
             for i in range(no_of_reviews):
                 print(i)
-                prompt_template = ChatPromptTemplate.from_messages(
-                    [
-                        ('system',"You are hotel ai agent. You have to read text data and you have to extract keywords which describe how hotel is like for Eg Hotel is awesome so awesome is keyword which generate positive note similar ,negative ,moderate as per your knowldege you have to provide answers.Extract only 5 Keywords eg like breakfast was awesome so here what is awesome here breakfast so it should be like Breakfast-->positive also negative also and neutral also. In last provide 1 line summary for hotel review whether it is good or not"),
-                        ('user',f"Question:{new_list[i]}")
-                    ]
-                )
-                
-                chain = prompt_template|llm|output_parser
-                response = chain.invoke({'user_prompt':new_list[i]})
-                st.success(response)
+                try:
+                    prompt_template = ChatPromptTemplate.from_messages(
+                        [
+                            ('system',"You are hotel ai agent. You have to read text data and you have to extract keywords which describe how hotel is like for Eg Hotel is awesome so awesome is keyword which generate positive note similar ,negative ,moderate as per your knowldege you have to provide answers.Extract only 5 Keywords eg like breakfast was awesome so here what is awesome here breakfast so it should be like Breakfast-->positive also negative also and neutral also. In last provide 1 line summary for hotel review whether it is good or not"),
+                            ('user',f"Question:{new_list[i]}")
+                        ]
+                    )
+                    
+                    chain = prompt_template|llm|output_parser
+                    response = chain.invoke({'user_prompt':new_list[i]})
+                    st.success(response)
+                except:
+                    st.error("Due to Website Cache Security unable to scrap data!.")
             # for date1 in month_date:
             #     date_list.append(date1.text)
             # new_date_list=[]
