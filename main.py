@@ -10,7 +10,7 @@ load_dotenv()
 
 
 os.environ["GROQ_API_KEY"] = st.secrets["general"]["GROQ_API_KEY"]
-os.environ['HF_TOKEN'] = st.secrets["general"]["HF_TOKEN"]
+
 os.environ['LANGCHAIN_API_KEY'] = st.secrets["general"]["LANGCHAIN_API_KEY"]
 os.environ['LANGCHAIN_TRACING_V2'] = 'true'
 
@@ -18,7 +18,7 @@ criteria = st.selectbox("Select Option",options=['Using URL',"Using Manual Text"
 
 
 def review_chatbot(criteria):
-    llm = ChatGroq(model="Gemma2-9b-It")
+    llm = ChatGroq(model="Gemma2-9b-It",api_key="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")
     output_parser = StrOutputParser()
     if criteria=="Using Manual Text":
         user_prompt = st.text_input("Enter Review")
@@ -31,9 +31,39 @@ def review_chatbot(criteria):
             )
             
             chain = prompt_template|llm|output_parser
-            response = chain.invoke({'user_prompt':user_prompt})
-            st.success(response)
-    
+            answer = chain.invoke({'user_prompt':user_prompt})
+            st.success(answer)
+            new = answer.split("\n*")
+            new_res = new[1:len(new)-1]
+            result_dict = {}
+
+            for entry in new_res:
+                entry = entry.strip()
+                key, value = entry.split(':', 1)
+                key = key.replace('*','').strip()
+                value = value.replace('*','').strip()
+                value = value.strip()
+                result_dict[key] = value
+            import pandas as pd
+            df  = pd.DataFrame(list(result_dict.items()),columns=['Keywords','Sentiment'])
+            def highlight_color(row):
+                if row['Sentiment'][:9].strip().lower() == 'positive':
+                    return ['background-color: #77dd77;color:black;font-weight:bold'] * len(row)  # Green for Positive
+                elif row['Sentiment'][:8].strip().lower() in ['neutral','moderate']:
+                    return ['background-color: #FBDB65;color:black;font-weight:bold'] * len(row)  # Red for Negative
+                elif row['Sentiment'][:5].strip().lower() in ['mixed']:
+                    return ['background-color: #FBDB65;color:black;font-weight:bold'] * len(row)  # Red for Negative
+                elif row['Sentiment'][:9].strip().lower() == 'negative':
+                    return ['background-color: #FF7276;color:black;font-weight:bold'] * len(row)  # Red for Negative
+                
+                else:
+                    return [''] * len(row) 
+            
+            
+            
+        
+            st.write(df.style.apply(highlight_color,axis=1))
+
     else:
         no_of_reviews = st.selectbox("Select How many review you want to analyze",options=[1,2,3,4,5,6,7,8,9,10])
         headers = {
@@ -46,6 +76,17 @@ def review_chatbot(criteria):
         "TE": "Trailers"
         }
         url = st.text_input("Provide URL of TripAdvisor")
+        prompt_template_heading = ChatPromptTemplate.from_messages(
+                    [
+                        ('system',"You are hotel ai agent. You have to read text data and you have to extract hotel name from URL. I will provide you URL.Only Return Hotel Name"),
+                        ('user',"Question:{url}")
+                    ]
+                    )
+        chain_header = prompt_template_heading|llm|output_parser
+        response_header = chain_header.invoke({'url':url})
+        col1,col2,col4,col3,col5 = st.columns([1,1,3,1,1])
+        with col4:
+            st.markdown(f"""<h2>{response_header}</h2>""",unsafe_allow_html=True)
         if url:
             response = requests.get(url = url,headers=headers).content
             soup = BeautifulSoup(response,'html.parser')
@@ -68,18 +109,38 @@ def review_chatbot(criteria):
                     )
                     
                     chain = prompt_template|llm|output_parser
-                    response = chain.invoke({'user_prompt':new_list[i]})
-                    st.success(response)
+                    answer = chain.invoke({'user_prompt':new_list[i]})
+                    st.success(answer)
+                    new = answer.split("\n*")
+                    new_res = new[1:len(new)-1]
+                    result_dict = {}
+
+                    for entry in new_res:
+                        entry = entry.strip()
+                        key, value = entry.split(':', 1)
+                        key = key.replace('*','').strip()
+                        value = value.replace('*','').strip()
+                        value = value.strip()
+                        result_dict[key] = value
+                    import pandas as pd
+                    df  = pd.DataFrame(list(result_dict.items()),columns=['Keywords','Sentiment'])
+                    def highlight_color(row):
+                        if row['Sentiment'][:9].strip().lower() == 'positive':
+                            return ['background-color: #77dd77;color:black;font-weight:bold'] * len(row)  # Green for Positive
+                        elif row['Sentiment'][:8].strip().lower() in ['neutral','moderate']:
+                            return ['background-color: #FBDB65;color:black;font-weight:bold'] * len(row)  # Red for Negative
+                        elif row['Sentiment'][:5].strip().lower() in ['mixed']:
+                            return ['background-color: #FBDB65;color:black;font-weight:bold'] * len(row)  # Red for Negative
+                        elif row['Sentiment'][:9].strip().lower() == 'negative':
+                            return ['background-color: #FF7276;color:black;font-weight:bold'] * len(row)  # Red for Negative
+                        
+                        else:
+                            return [''] * len(row) 
+                    st.write(df.style.apply(highlight_color,axis=1))
+                    
+                
                 except:
                     st.error("Due to Website Cache Security unable to scrap data!.")
-            # for date1 in month_date:
-            #     date_list.append(date1.text)
-            # new_date_list=[]
-            # for date_stay in date_list:
-            #     new_date_list.append(date_stay.split(':')[1].strip())
-        #user_prompt = "Nicely cleaned room by housekeeping staff sujata and sanju.. Would recommend business travellers to stay in this hotel as very near to the railway station. Usually other hotels in the vicinity are not clean and cossy as compared to this one in Surat."
-    # user_prompt = "Staying at Ginger was a nice experience Staff Sujata,phoolmani, vishnu and kalawati was very supportive and their service in restaurant was superb with their polite and customer centric behaviour. Whatever was asked by me was made available at the restaurant. Staff behaviour was the best."
-            # llm = ChatGroq(model="Gemma2-9b-It")
-            # output_parser = StrOutputParser()
+    
         
 review_chatbot(criteria)
