@@ -18,7 +18,7 @@ criteria = st.selectbox("Select Option",options=['Using URL',"Using Manual Text"
 
 
 def review_chatbot(criteria):
-    llm = ChatGroq(model="Gemma2-9b-It",api_key="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")
+    llm = ChatGroq(model="Gemma2-9b-It")
     output_parser = StrOutputParser()
     if criteria=="Using Manual Text":
         user_prompt = st.text_input("Enter Review")
